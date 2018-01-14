@@ -13,6 +13,7 @@ class LowPassFilter(object):
     def filt(self, val):
         if self.ready:
             val = self.a * val + self.b * self.last_val
+            
         else:
             self.ready = True
 
