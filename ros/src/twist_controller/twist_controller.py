@@ -23,28 +23,28 @@ class Controller(object):
     def control(self, *args, **kwargs):
         # TODO: Change the arg, kwarg list to suit your needs
         # Return throttle, brake, steer
-        
-        target_velocity_linear_x = args[0]
-        target_velocity_angular_z = args[1]
-        current_velocity_linear_x = args[2]
-        current_velocity_angular_z = args[3]
 
-        steer_cmd = self.yaw_controller.get_steering(
-            target_velocity_linear_x, target_velocity_angular_z, current_velocity_linear_x)
+        target_v_lin_x = args[0]
+        target_v_ang_z = args[1]
+        current_v_lin_x = args[2]
+        current_v_ang_z = args[3]
 
-        diff_vel = target_velocity_linear_x - current_velocity_linear_x;
-        accel = diff_vel / 0.5
+        steer_cmd = self.yaw_controller.get_steering(target_v_lin_x, target_v_ang_z, current_v_lin_x)
 
-        if accel > 0:
-            accel = min(self.accel_limit, accel)
-            throttle_cmd = accel / self.accel_limit
+        velocity_diff = target_v_lin_x - current_v_lin_x;
+        accelaration = velocity_diff / 0.5
+
+        if accelaration > 0:
+            accelaration = min(self.accel_limit, accelaration)
+            throttle_cmd = accelaration / self.accel_limit
             brake_cmd = 0.0
         else:
-            accel = max(self.decel_limit, accel)
+            accelaration = max(self.decel_limit, accelaration)
             throttle_cmd = 0.0
+
             # Force=mass*acceleration,Torque=Force*radius
             # Torque = mass*acceleration*radius
-            torque = self.vehicle_mass * accel * self.wheel_radius
+            torque = self.vehicle_mass * accelaration * self.wheel_radius
             brake_cmd = abs(torque)
 
         return throttle_cmd, brake_cmd, steer_cmd
