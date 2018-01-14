@@ -93,7 +93,7 @@ def get_traffic_lights():
     :return: TrafficLightArray
     """
     config_string = rospy.get_param("/traffic_light_config")
-    traffic_light_positions = yaml.load(config_string)["light_positions"]
+    traffic_light_positions = yaml.load(config_string)["stop_light_positions"]
 
     traffic_lights = TrafficLightArray()
     traffic_light_list = []
