@@ -67,10 +67,14 @@ class DBWNode(object):
         rospy.Subscriber('/vehicle/dbw_enabled', Bool, self.dbw_enabled_cb)
         rospy.Subscriber('/current_velocity', TwistStamped, self.current_velocity_cb)
         rospy.Subscriber('/twist_cmd', TwistStamped, self.twist_cmd_cb)
+        rospy.Subscriber('/final_waypoints', styx_msgs.msg.Lane, self.final_waypoints_cb, queue_size=1)
+        rospy.Subscriber('/current_pose', geometry_msgs.msg.PoseStamped, self.current_pose_cb, queue_size=1)
 
         self.dbw_enabled = Bool()
         self.cur_vel = Twist()
         self.twist_cmd = Twist()
+        self.final_waypoints = None
+        self.cur_pose = None
 
         self.loop()
 
@@ -79,11 +83,15 @@ class DBWNode(object):
         while not rospy.is_shutdown():
             # TODO: Get predicted throttle, brake, and steering using `twist_controller`
             # You should only publish the control commands if dbw is enabled
+
             throttle, brake, steering = self.controller.control(
                 self.twist_cmd.linear.x, 
                 self.twist_cmd.angular.z,
                 self.cur_vel.linear.x, 
-                self.cur_vel.angular.z)
+                self.cur_vel.angular.z,
+                self.final_waypoints,
+                self.cur_pose,
+                self.dbw_enabled)
 
             if self.dbw_enabled:
                 self.publish(throttle, brake, steering)
@@ -91,14 +99,19 @@ class DBWNode(object):
             rate.sleep()
 
     def dbw_enabled_cb(self, msg):
-        self.dbw_enabled = msg.data
-        # TODO: reset steering and throttle PID controllers accordingly
+        self.dbw_enabled = bool(msg.data)
 
     def current_velocity_cb(self, msg):
         self.cur_vel = msg.twist
 
     def twist_cmd_cb(self, msg):
         self.twist_cmd = msg.twist
+
+    def final_waypoints_cb(self, msg):
+        self.final_waypoints = msg.waypoints
+
+    def current_pose_cb(self, msg):
+        self.cur_pose = msg.pose
 
     def publish(self, throttle, brake, steer):
         tcmd = ThrottleCmd()
