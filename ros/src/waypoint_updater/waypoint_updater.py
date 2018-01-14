@@ -28,6 +28,7 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
 PUBLISH_RATE = 20 # Publishing rate (Hz)
 SAFE_DECEL_FACTOR = 0.1 # Multiplier to the decel limit.
+ACC_FACTOR = 0.5# Multiplier to the accel limit
 
 max_local_distance = 20.0 # Max waypoint distance we admit for a local minimum (m)
 
@@ -80,7 +81,10 @@ class WaypointUpdater(object):
 
     # Waypoints (not complete yet)
     def waypoints_cb(self, msg):
-        return msg.waypoints
+        for waypoint in msg.waypoints:
+                self.waypoints.append(waypoint)
+        #self.base_waypoints_sub.unregister()
+        #rospy.loginfo("Unregistered from /base_waypoints topic")
 
     # Callback for /traffic_waypoint message. (not complete yet)
     def traffic_cb(self, msg):
@@ -114,7 +118,7 @@ class WaypointUpdater(object):
 
                     self.safe_distance = (self.car_curr_vel ** 2)/(2 * self.decel_limit * SAFE_DECEL_FACTOR)
                     self.nextWaypoint = self.NextWaypoint(self.car_position, self.car_yaw, self.waypoints)
-                    self.car_action = self.DesiredAction(self.tl_idx, self.tl_state, self.closestWaypoint, self.waypoints)
+                    self.car_action = self.DesiredAction(self.nextWaypoint, self.waypoints)
 
                     self.generateFinalWaypoints(self.nextWaypoint, self.waypoints, self.car_action)
                     self.publish()
@@ -148,7 +152,7 @@ class WaypointUpdater(object):
             velocity = math.sqrt(init_vel**2 + 2 * a * dist)
             if velocity > self.cruise_speed:
                velocity = self.cruise_speed
-            self.set_waypoint_velocity(waypoints, idx, velocity)
+            self.set_waypoint_velocity(waypoints, i, velocity)
             self.final_waypoints.append(waypoints[i])
 
 
@@ -181,7 +185,7 @@ class WaypointUpdater(object):
                 y = position.y
                 map_x = waypoints[i].pose.pose.position.x
                 map_y = waypoints[i].pose.pose.position.y
-                dist = self.distance_any(x, y, map_x, map_y)
+                dist = self.distanceAny(x, y, map_x, map_y)
                 if (dist < closestLen):
                         closestLen = dist
                         closestWaypoint = i
@@ -214,6 +218,14 @@ class WaypointUpdater(object):
     def DesiredAction(self, closestWaypoint, waypoints): 
         action = "GO"
         return action 
+
+    #Publish waypoints
+    def publish(self):
+        final_waypoints_msg = Lane()
+        final_waypoints_msg.header.frame_id = '/World'
+        final_waypoints_msg.header.stamp = rospy.Time(0)
+        final_waypoints_msg.waypoints = list(self.final_waypoints)
+        self.final_waypoints_pub.publish(final_waypoints_msg)
 
 
 
