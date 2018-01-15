@@ -107,6 +107,7 @@ class WaypointUpdater(object):
            self.tl_state = "NO"
            self.tl_index = msg.waypoint
 
+        #print('{}'.format(self.tl_state))
 
     # Callback for /obstacle_waypoint message. We will implement it later
     def obstacle_cb(self, msg):

@@ -23,4 +23,7 @@
 
     <!--Camera Info Publisher -->
     <include file="$(find camera_info_publisher)/launch/camera_info_publisher.launch"/>
+
+    <!--Run environment parameter -->
+    <param name="run_mode" value="site" />
 </launch>
