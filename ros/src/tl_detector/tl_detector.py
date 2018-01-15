@@ -111,6 +111,7 @@ class TLDetector(object):
             self.has_image = True
             self.camera_image = msg
             light_wp, state = self.process_traffic_lights()
+            #print("####### ", state)
 
             '''
             Publish upcoming red lights at camera frequency.
@@ -122,7 +123,7 @@ class TLDetector(object):
                 self.state_count = 0
                 self.state = state
             elif self.state_count >= STATE_COUNT_THRESHOLD:
-                self.last_state = self.state
+                self.last_state = state
                 light_wp = light_wp if state == TrafficLight.RED else -1
                 self.last_wp = light_wp
                 n_msg = CustomTrafficLight()
@@ -132,7 +133,7 @@ class TLDetector(object):
             else:
                 n_msg = CustomTrafficLight()
                 n_msg.waypoint = self.last_wp
-                n_msg.state = state
+                n_msg.state = self.last_state
                 self.upcoming_red_light_pub.publish(n_msg)
         self.state_count += 1
 

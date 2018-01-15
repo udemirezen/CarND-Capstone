@@ -102,6 +102,7 @@ class TLClassifier(object):
             scores = np.squeeze(scores)
             classes = np.squeeze(classes).astype(np.int32)
 
+            self.detected_light_state = TrafficLight.UNKNOWN
 
             # DISTANCE TO TRAFFIC LIGHT and passing to TrafficLight thing
             # Should be done as part of visual to avoid duplicate computation
