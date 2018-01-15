@@ -44,8 +44,7 @@ class WaypointUpdater(object):
         
         base_waypoints = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
         #rospy.logdebug('Base waypoints ', base_waypoints)
-uint8 state
-int64 waypoint
+
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
         traffic_waypoint = rospy.Subscriber('/traffic_waypoint', CustomTrafficLight, self.traffic_cb)
         #rospy.logdebug('Traffic waypoints ', traffic_waypoint)
@@ -93,15 +92,18 @@ int64 waypoint
 
     # Callback for /traffic_waypoint message.
     def traffic_cb(self, msg):
-        self.tl_index = msg.pose.position  #here I am not sure how to get the traffic light index
         if msg.state == 0:
            self.tl_state = "RED"
+           self.tl_index = msg.waypoint
         elif msg.state == 1:
            self.tl_state = "YELLOW"
+           self.tl_index = msg.waypoint
         elif msg.state == 2:
            self.tl_state = "GREEN"
+           self.tl_index = msg.waypoint
         elif msg.state == 4:
            self.tl_state = "NO"
+           self.tl_index = msg.waypoint
 
 
     # Callback for /obstacle_waypoint message. We will implement it later
