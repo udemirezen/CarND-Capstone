@@ -30,6 +30,8 @@ PUBLISH_RATE = 20 # Publishing rate (Hz)
 SAFE_DECEL_FACTOR = 0.1 # Multiplier to the decel limit.
 ACC_FACTOR = 0.5 # Multiplier to the accel limit
 STOP_DISTANCE = 3.00 # Distance in meters from the traffic light stop line
+STOP_HYST = 3 # Margin of error to stop the car
+
 
 max_local_distance = 20.0 # Max waypoint distance we admit for a local minimum (m)
 
