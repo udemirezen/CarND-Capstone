@@ -71,7 +71,7 @@ class WaypointUpdater(object):
         self.car_yaw = None
         self.tl_index = None
         self.tl_state = None
-        #self.distance_to_tl = None
+        self.distance_to_tl = None
 
         self.work()
         #rospy.spin()
@@ -184,9 +184,13 @@ class WaypointUpdater(object):
             self.final_waypoints.append(waypoints[i])
 
     def SlowWaypoints(self, nextWaypoint, tl_index, waypoints):
-
-        dist_to_TL = self.distance_to_tl
-        slow_decel = (self.car_curr_vel ** 2)/(2 * dist_to_TL)
+        
+        if (self.distance_to_tl != None) :
+           dist_to_TL = self.distance_to_tl
+           slow_decel = (self.car_curr_vel ** 2)/(2 * dist_to_TL)
+        else :
+           slow_decel = self.decel_limit/2
+        
         if slow_decel > self.decel_limit:
            slow_decel = self.decel_limit
         init_vel = self.car_curr_vel
