@@ -34,7 +34,7 @@ class TLClassifier(object):
         else:
             raise ValueError("The class can be initialized with simulator or site mode only ...")
 
-        labels_source_path = cwd + '/networks/label_map_4class.txt'
+        labels_source_path = cwd + '/networks/label_map_4class.pbtxt'
         num_classes = 4
 
         label_map = label_map_util.load_labelmap(labels_source_path)
@@ -57,16 +57,16 @@ class TLClassifier(object):
             self.sess = tf.Session(graph=self.inference_graph, config=config)
 
         # Input layer
-        self.image_tensor = self.detection_graph.get_tensor_by_name('image_tensor:0')
+        self.image_tensor = self.inference_graph.get_tensor_by_name('image_tensor:0')
 
         # Each box represents a part of the image where a particular object was detected.
-        self.detection_boxes = self.detection_graph.get_tensor_by_name('detection_boxes:0')
+        self.detection_boxes = self.inference_graph.get_tensor_by_name('detection_boxes:0')
 
         # Each score represent how level of confidence for each of the objects.
         # Score is shown on the result image, together with the class label.
-        self.detection_scores = self.detection_graph.get_tensor_by_name('detection_scores:0')
-        self.detection_classes = self.detection_graph.get_tensor_by_name('detection_classes:0')
-        self.num_detections = self.detection_graph.get_tensor_by_name('num_detections:0')
+        self.detection_scores = self.inference_graph.get_tensor_by_name('detection_scores:0')
+        self.detection_classes = self.inference_graph.get_tensor_by_name('detection_classes:0')
+        self.num_detections = self.inference_graph.get_tensor_by_name('num_detections:0')
 
         print("Inference graph loaded ...")
 
@@ -87,7 +87,7 @@ class TLClassifier(object):
             #time0 = time.time()
 
             # Actual detection.
-            with self.detection_graph.as_default():
+            with self.inference_graph.as_default():
                 (boxes, scores, classes, num) = self.sess.run(
                     [self.detection_boxes, self.detection_scores,
                      self.detection_classes, self.num_detections],
@@ -111,7 +111,7 @@ class TLClassifier(object):
                 if scores is None or scores[i] > min_score_thresh:
 
                     class_name = self.category_index[classes[i]]['name']
-                    print('{}'.format(class_name))
+                    #print('{}'.format(class_name))
 
                     self.detected_light_state = TrafficLight.UNKNOWN
 

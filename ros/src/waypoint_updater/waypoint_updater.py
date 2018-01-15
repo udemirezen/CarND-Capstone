@@ -134,7 +134,7 @@ class WaypointUpdater(object):
 
                     self.safe_distance = (self.car_curr_vel ** 2)/(2 * self.decel_limit * SAFE_DECEL_FACTOR)
                     self.next_waypoint = self.NextWaypoint(self.car_position, self.car_yaw, self.waypoints)
-                    self.car_action = self.DesiredAction(self.next_waypoint, self.waypoints)
+                    #self.car_action = self.DesiredAction(self.tl_index, self.tl_state, self.next_waypoint, self.waypoints)
 
                     if self.tl_index != None:
                        self.distance_to_tl = self.distance(self.waypoints, self.next_waypoint, self.tl_index)
