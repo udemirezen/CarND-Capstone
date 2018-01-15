@@ -71,7 +71,7 @@ class WaypointUpdater(object):
         self.car_yaw = None
         self.tl_index = None
         self.tl_state = None
-        self.distance_to_tl = None
+        #self.distance_to_tl = None
 
         self.work()
         #rospy.spin()
