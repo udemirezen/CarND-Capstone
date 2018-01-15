@@ -192,7 +192,7 @@ class WaypointUpdater(object):
         init_vel = self.car_curr_vel
         end = nextWaypoint + LOOKAHEAD_WPS
         for i in range(nextWaypoint, end):
-            dist = self.distance(waypoints, nextWaypoint, idx+1)
+            dist = self.distance(waypoints, nextWaypoint, i+1)
             if (i < tl_index):
                 vel2 = init_vel ** 2 - 2 * slow_decel * dist
                 if vel2 < 0.1:
