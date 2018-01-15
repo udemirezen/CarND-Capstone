@@ -2,18 +2,19 @@
 import rospy
 from std_msgs.msg import Int32
 from geometry_msgs.msg import PoseStamped, Pose
-
 from styx_msgs.msg import TrafficLightArray, TrafficLight
-from styx_msgs.msg import Lane
+from styx_msgs.msg import Lane, CustomTrafficLight
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 from light_classification.tl_classifier import TLClassifier
 
 import waypoint_helper
 import tf
+import numpy as np
 import cv2
 import yaml
 import threading
+import geometry_msgs.msg
 
 STATE_COUNT_THRESHOLD = 3
 
@@ -30,6 +31,8 @@ class TLDetector(object):
         self.last_state = TrafficLight.UNKNOWN
         self.last_wp = -1
         self.state_count = 0
+
+        self.has_image = False
 
         self.traffic_lights_pos = waypoint_helper.get_traffic_lights()
 
@@ -50,7 +53,7 @@ class TLDetector(object):
             self.classifier_ready = True
             timer.cancel()
 
-        timer = threading.Timer(15.0, shutdown_timer())
+        timer = threading.Timer(15.0, shutdown_timer)
         timer.daemon = True
         timer.start()
 
@@ -73,7 +76,7 @@ class TLDetector(object):
 
         # Publishers
         # For publishing the waypoint index of a red traffic light
-        self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
+        self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', CustomTrafficLight, queue_size=1)
         # For publishing the upcomming traffic light state
         self.upcoming_traffic_light_state_pub = rospy.Publisher('/traffic_light_state', Int32, queue_size=1)
         # For publishing the upcomming traffic light position
@@ -86,10 +89,10 @@ class TLDetector(object):
         rospy.spin()
 
     def pose_cb(self, msg):
-        self.pose = msg
+        self.pose = msg.pose
 
-    def waypoints_cb(self, waypoints):
-        self.waypoints = waypoints
+    def waypoints_cb(self, lane):
+        self.waypoints = lane.waypoints
 
     def traffic_cb(self, msg):
         self.lights = msg.lights
@@ -103,7 +106,7 @@ class TLDetector(object):
 
         """
         # Need to protect agains race condition - synchronous cb
-        if self.lock.aquire(True):
+        if self.lock.acquire(True):
 
             self.has_image = True
             self.camera_image = msg
@@ -122,9 +125,15 @@ class TLDetector(object):
                 self.last_state = self.state
                 light_wp = light_wp if state == TrafficLight.RED else -1
                 self.last_wp = light_wp
-                self.upcoming_red_light_pub.publish(Int32(light_wp))
+                n_msg = CustomTrafficLight()
+                n_msg.waypoint = light_wp
+                n_msg.state = state
+                self.upcoming_red_light_pub.publish(n_msg)
             else:
-                self.upcoming_red_light_pub.publish(Int32(self.last_wp))
+                n_msg = CustomTrafficLight()
+                n_msg.waypoint = self.last_wp
+                n_msg.state = state
+                self.upcoming_red_light_pub.publish(n_msg)
         self.state_count += 1
 
         self.lock.release()
@@ -140,7 +149,6 @@ class TLDetector(object):
 
         """
         if(not self.has_image):
-            self.prev_light_loc = None
             return False
 
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
@@ -160,14 +168,16 @@ class TLDetector(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
 
         """
-
-        if(not self.has_image or not self.pose or not self.waypoints or not self.traffic_lights_pos):
-            return False
-
         state = TrafficLight.UNKNOWN   # Default state
 
+        if(not self.has_image or not self.pose or not self.waypoints or not self.traffic_lights_pos):
+            return -1, state
+
+
         closest_traffic_light_idx, closest_traffic_light = waypoint_helper.get_closest_traffic_light(
-                                self.traffic_positions.lights, self.pose.position, self.waypoints)
+                                self.traffic_lights_pos.lights, self.pose.position, self.waypoints)
+
+        #print('closest traffic light: ', closest_traffic_light)
 
         if closest_traffic_light:
             cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "rgb8")
