@@ -189,7 +189,7 @@ class WaypointUpdater(object):
            dist_to_TL = self.distance_to_tl
            slow_decel = (self.car_curr_vel ** 2)/(2 * dist_to_TL)
         else :
-           slow_decel = self.decel_limit/2
+           slow_decel = 0
         
         if slow_decel > self.decel_limit:
            slow_decel = self.decel_limit
