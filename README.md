@@ -4,7 +4,9 @@ Team: otonom
 
 Team Members:
 
-|Full Name| Email|
+
+|Full Name|Email|
+|---------|-----|
 |Berker Logoglu (Leader)|berkerlogoglu@gmail.com|
 |Umut Demirezen|udemirezen@gmail.com|
 |Hua Bai | huabaipku@gmail.com|
