@@ -78,13 +78,14 @@ class WaypointUpdater(object):
         self.distance_to_tl = None
         self.last_tl_pos = None
 
+
         self.work()
         #rospy.spin()
 
     # Position of the car
     def pose_cb(self, msg):
         car_pose = msg.pose
-        self.car_position = car_pose.position 
+        self.car_position = car_pose.position
         car_orientation = car_pose.orientation
         quaternion = (car_orientation.x, car_orientation.y, car_orientation.z, car_orientation.w)
         euler = tf.transformations.euler_from_quaternion(quaternion)
@@ -129,13 +130,13 @@ class WaypointUpdater(object):
 
     # function work
     def work(self):
-        
+
         rate = rospy.Rate(PUBLISH_RATE)
         # ROS parameters
         self.cruise_speed = self.kmphToMph(rospy.get_param('~/waypoint_loader/velocity', 40.0))
         self.decel_limit = abs(rospy.get_param('~/twist_controller/decel_limit', -5))
-        self.accel_limit = rospy.get_param('~/twist_controller/accel_limit', 1) 
-        
+        self.accel_limit = rospy.get_param('~/twist_controller/accel_limit', 1)
+
         env_velocity = os.getenv('VELOCITY','0')
         if float(env_velocity) > 0.01:
            self.cruise_speed = self.kmphToMph(float(env_velocity))
@@ -149,8 +150,12 @@ class WaypointUpdater(object):
                     #self.car_action = self.DesiredAction(self.tl_index, self.tl_state, self.next_waypoint, self.waypoints)
 
                     if self.tl_index != None:
-                       self.distance_to_tl = self.distance(self.waypoints, self.next_waypoint, self.tl_index)
-
+                        dl = lambda a, b: math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2)
+                        self.distance_to_tl = 99999
+                        if self.last_tl_pos != None and self.car_position != None:
+                            distance_to_last_tl = dl(self.last_tl_pos, self.car_position)
+                            if distance_to_last_tl > 0:
+                                self.distance_to_tl = distance_to_last_tl
                     self.car_action = self.DesiredAction(self.tl_index, self.tl_state, self.next_waypoint, self.waypoints)
                     self.generateFinalWaypoints(self.next_waypoint, self.waypoints, self.car_action, self.tl_index)
                     self.publish()
@@ -178,7 +183,7 @@ class WaypointUpdater(object):
             self.final_waypoints.append(waypoints[i])
 
     def GoWaypoints(self, nextWaypoint, waypoints):
-        
+
         init_vel = self.car_curr_vel
         end = nextWaypoint + LOOKAHEAD_WPS
         if end > len(waypoints) - 1:
@@ -193,13 +198,13 @@ class WaypointUpdater(object):
             self.final_waypoints.append(waypoints[i])
 
     def SlowWaypoints(self, nextWaypoint, tl_index, waypoints):
-        
+
         if (self.distance_to_tl != None) :
            dist_to_TL = self.distance_to_tl
            slow_decel = (self.car_curr_vel ** 2)/(2 * dist_to_TL)
         else :
            slow_decel = 0
-        
+
         if slow_decel > self.decel_limit:
            slow_decel = self.decel_limit
         init_vel = self.car_curr_vel
@@ -215,8 +220,8 @@ class WaypointUpdater(object):
                 self.final_waypoints.append(waypoints[i])
             else:
                 velocity = 0.0
-                self.set_waypoint_velocity(waypoints, idx, velocity)
-                self.final_waypoints.append(waypoints[idx])
+                self.set_waypoint_velocity(waypoints, i, velocity)
+                self.final_waypoints.append(waypoints[i])
 
     # generation of Final Waypoints
     def generateFinalWaypoints(self, next_waypoint, waypoints, action, tl_index):
@@ -241,7 +246,7 @@ class WaypointUpdater(object):
             dist += dl(waypoints[wp1].pose.pose.position, waypoints[i].pose.pose.position)
             wp1 = i
         return dist
-    
+
     # Distance to any point
     def distanceAny(self, x1, y1, x2, y2):
         return math.sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2))
@@ -275,7 +280,7 @@ class WaypointUpdater(object):
         angle = abs(yaw - heading)
 
 	if (angle > math.pi/4):
-		closestWaypoint += 1 
+		closestWaypoint += 1
                 if (closestWaypoint > len(waypoints)-1):
                     closestWaypoint -= 1
 
@@ -287,14 +292,14 @@ class WaypointUpdater(object):
 
     def CheckStop(self, tl_index, tl_state, next_waypoint, dist):
         stop0 = tl_state == "RED" or tl_state == "YELLOW"
-        stop1 = (dist < STOP_DISTANCE and stop0) 
+        stop1 = (dist < STOP_DISTANCE and stop0)
         stop2 = (tl_index == next_waypoint and dist < STOP_DISTANCE and stop0)
         stop3 = (tl_index + STOP_HYST > next_waypoint and stop0 and dist == 99999)
         return  stop1 or stop2 or stop3
 
     def CheckSlow(self, tl_state, dist):
         slow1 = (dist > STOP_DISTANCE and dist < self.safe_distance and tl_state != "NO" and dist != 99999)
-        slow2 = (dist > STOP_DISTANCE and dist < 2 * STOP_DISTANCE and tl_state != "NO" and dist != 99999 and self.car_curr_vel > self.mph_to_mps(3.0))
+        slow2 = (dist > STOP_DISTANCE and dist < 2 * STOP_DISTANCE and tl_state != "NO" and dist != 99999 and self.car_curr_vel > self.kmphToMph(3.0))
         return  slow1 or slow2
 
     def CheckGo(self, tl_index, tl_state, next_waypoint, dist):
