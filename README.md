@@ -11,7 +11,7 @@
 |Full Name|Email|
 |---------|-----|
 |Berker Logoglu (Leader)|berkerlogoglu@gmail.com|
-|Umut Demirezen|udemirezen@gmail.com|
+|Mustafa Umut Demirezen|udemirezen@gmail.com|
 |Hua Bai | huabaipku@gmail.com|
 |Juan Luis Vivas Occhipinti|juanluisvo@yahoo.es|
 |Csongor Szabo|zobertke@gmail.com|
