@@ -1,10 +1,11 @@
-# Project CarND-Capstone solution from Self Driving Car Course Udacity
+# Project CarND-Capstone solution
+# Self Driving Car Course Udacity
 
 ## Team Information
 
 ### Team: otonom
 
-Team Members:
+### Team Members:
 
 
 |Full Name|Email|
