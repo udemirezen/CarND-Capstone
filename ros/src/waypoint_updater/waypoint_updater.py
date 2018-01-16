@@ -9,6 +9,7 @@ import math
 import os
 import tf
 from numpy import random
+import geometry_msgs.msg
 
 '''
 This node will publish waypoints from the car's current position to some `x` distance ahead.
@@ -56,7 +57,10 @@ class WaypointUpdater(object):
         
         rospy.Subscriber('/current_velocity', TwistStamped, self.current_velocity_cb)
 
+        rospy.Subscriber('/traffic_light_pos', geometry_msgs.msg.Point, self.tl_pos_cb)
+
         self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
+
 
         # TODO: Add other member variables you need below	
         self.cruise_speed = None
@@ -72,6 +76,7 @@ class WaypointUpdater(object):
         self.tl_index = None
         self.tl_state = None
         self.distance_to_tl = None
+        self.last_tl_pos = None
 
         self.work()
         #rospy.spin()
@@ -117,6 +122,10 @@ class WaypointUpdater(object):
     def current_velocity_cb(self, msg):
         curr_lin = [msg.twist.linear.x, msg.twist.linear.y]
         self.car_curr_vel = math.sqrt(curr_lin[0]**2 + curr_lin[1]**2)
+
+    # Callback for tl_pos
+    def tl_pos_cb(self, msg):
+        self.last_tl_pos = msg
 
     # function work
     def work(self):
@@ -218,10 +227,6 @@ class WaypointUpdater(object):
            self.SlowWaypoints(next_waypoint, tl_index, waypoints)
         elif (action == "GO"):
            self.GoWaypoints(next_waypoint, waypoints)
-
-
-
-
 
     def get_waypoint_velocity(self, waypoint):
         return waypoint.twist.twist.linear.x
