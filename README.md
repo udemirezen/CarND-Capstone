@@ -19,11 +19,11 @@
 
 ## About our implementation
 
-# Running some tests
+### Running some tests
 
  <img src="/pics/media-20180117.png" alt="Tests"> 
 
-# Traffic light detection
+### Traffic light detection
 
 The implemented model was Faster R-CNN with Resnet- Model
 
