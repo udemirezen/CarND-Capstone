@@ -17,7 +17,7 @@
 |Csongor Szabo|zobertke@gmail.com|
 
 
-## About our implementation
+## About the implementation
 
 ### Running some tests
 
