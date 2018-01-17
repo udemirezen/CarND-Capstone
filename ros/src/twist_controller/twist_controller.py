@@ -44,7 +44,6 @@ class Controller(object):
         target_v_ang_z = args[1]
         current_v_lin_x = args[2]
         current_v_ang_z = args[3]
-
         final_waypoints = args[4]
         current_pose = args[5]
         dbw_enabled = args[6]
@@ -62,7 +61,7 @@ class Controller(object):
 
         # Too big longitudinal error reset the integrator to be able to break hard
         if longitudinal_error < -1.0:
-            self.throttle_pid.error_integral = 0
+            self.throttle_pid_controller.error_integral = 0
 
         throttle_cmd = self.throttle_pid_controller.step(longitudinal_error, sample_time)
         throttle_cmd = self.throttle_filter.get_smoothed_value(throttle_cmd)
