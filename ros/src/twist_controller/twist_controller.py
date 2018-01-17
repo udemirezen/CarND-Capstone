@@ -52,8 +52,8 @@ class Controller(object):
         self.prev_time = current_time
 
         # Calculate the longitudinal and lateral error
-        #longitudinal_error = target_v_lin_x - current_v_lin_x
-        longitudinal_error = final_waypoints[1].twist.twist.linear.x - current_v_lin_x
+        longitudinal_error = target_v_lin_x - current_v_lin_x
+        #longitudinal_error = final_waypoints[1].twist.twist.linear.x - current_v_lin_x
         print("Long error:", longitudinal_error)
 
         lateral_error = self.get_lateral_error(final_waypoints, current_pose)
