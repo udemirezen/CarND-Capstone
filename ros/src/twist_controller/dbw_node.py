@@ -117,7 +117,7 @@ class DBWNode(object):
     def dbw_enabled_cb(self, msg):
         self.dbw_enabled = bool(msg.data)
         if not self.dbw_enabled:
-            self.controller.reset())
+            self.controller.reset()
 
     def current_velocity_cb(self, msg):
         self.cur_vel = msg.twist
