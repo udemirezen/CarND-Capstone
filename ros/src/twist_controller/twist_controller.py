@@ -1,6 +1,7 @@
 import rospy
 import numpy as np
 
+
 GAS_DENSITY = 2.858
 ONE_MPH = 0.44704
 
@@ -25,6 +26,7 @@ class Controller(object):
                                             ONE_MPH, kwargs['max_lat_accel'],
                                             kwargs['max_steer_angle'])
 
+
         self.throttle_pid_controller = pid.PID(kp=0.2, ki=0.01, kd=0.1, mn=self.decel_limit, mx=0.5 * self.accel_limit)
         self.brake_pid_controller = pid.PID(kp=30.0, ki=0.001, kd=5.0, mn=self.brake_deadband, mx=2000)
         self.steering_pid_controller = pid.PID(kp=1.0, ki=0.001, kd=0.5, mn=-self.max_steer_angle, mx=self.max_steer_angle)
@@ -42,6 +44,7 @@ class Controller(object):
         target_v_ang_z = args[1]
         current_v_lin_x = args[2]
         current_v_ang_z = args[3]
+
         final_waypoints = args[4]
         current_pose = args[5]
         dbw_enabled = args[6]
@@ -55,12 +58,11 @@ class Controller(object):
         #longitudinal_error = target_v_lin_x - current_v_lin_x
         longitudinal_error = final_waypoints[1].twist.twist.linear.x - current_v_lin_x
         print("Long error:", longitudinal_error)
-
         lateral_error = self.get_lateral_error(final_waypoints, current_pose)
 
         # Too big longitudinal error reset the integrator to be able to break hard
         if longitudinal_error < -1.0:
-            self.throttle_pid_controller.error_integral = 0
+            self.throttle_pid.error_integral = 0
 
         throttle_cmd = self.throttle_pid_controller.step(longitudinal_error, sample_time)
         throttle_cmd = self.throttle_filter.get_smoothed_value(throttle_cmd)
@@ -79,6 +81,7 @@ class Controller(object):
         #steer_cmd = self.steering_filter.get_smoothed_value(steer_cmd)
 
         return throttle_cmd, brake_cmd, steer_cmd
+
 
 
 
