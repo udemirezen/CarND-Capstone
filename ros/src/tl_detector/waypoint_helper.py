@@ -84,6 +84,9 @@ def get_closest_traffic_light(traffic_lights, car_position, waypoints):
         distances.append(distance)
 
     closest_traffic_light_index = np.argmin(distances)
+    closest_traffic_light = traffic_lights[closest_traffic_light_index]
+    closest_traffic_light_waypoint_index = get_closest_waypoint_index_for_pos(closest_traffic_light.pose.pose.position, waypoints_ahead_matrix)
+
 
     closest_traffic_light = traffic_lights[closest_traffic_light_index]
 

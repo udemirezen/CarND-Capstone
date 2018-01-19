@@ -57,8 +57,8 @@ class DBWNode(object):
                                          BrakeCmd, queue_size=1)
 
         # TODO: Create `TwistController` object
-        
-        self.controller = Controller(
+        self.use_pid_control = False
+        self.controller = Controller(use_pid_control=self.use_pid_control,
             wheel_base=wheel_base, steer_ratio=steer_ratio,  
             max_lat_accel=max_lat_accel, max_steer_angle=max_steer_angle,
             accel_limit=accel_limit, decel_limit=decel_limit,
@@ -78,16 +78,25 @@ class DBWNode(object):
         self.twist_cmd = Twist()
         self.final_waypoints = None
         self.cur_pose = None
+        self.prev_time = rospy.get_rostime()
+
+
         self.loop()
 
     def loop(self):
-        rate = rospy.Rate(10) # For 50Hz operation requirement
+        rate = rospy.Rate(20) # For 50Hz operation requirement
         while not rospy.is_shutdown():
             # TODO: Get predicted throttle, brake, and steering using `twist_controller`
             # You should only publish the control commands if dbw is enabled
 
+            current_time = rospy.get_rostime()
+            ros_duration = current_time - self.prev_time
+            sample_time = ros_duration.secs + (1e-9 * ros_duration.nsecs)
+            self.prev_time = current_time
+
             data = [self.twist_cmd, self.cur_vel, self.cur_pose, self.final_waypoints]
             data_availabe = all([x is not None for x in data])
+
 
             if self.dbw_enabled is True and data_availabe:
                 throttle, brake, steering = self.controller.control(
@@ -97,15 +106,16 @@ class DBWNode(object):
                     self.cur_vel.angular.z,
                     self.final_waypoints,
                     self.cur_pose,
-                    self.dbw_enabled)
+                    sample_time)
 
                 self.publish(throttle, brake, steering)
-
+            else:
+                print("NO DATA")
             rate.sleep()
 
     def dbw_enabled_cb(self, msg):
         self.dbw_enabled = bool(msg.data)
-        if not self.dbw_enabled:
+        if self.dbw_enabled is False:
             self.controller.reset()
 
     def current_velocity_cb(self, msg):

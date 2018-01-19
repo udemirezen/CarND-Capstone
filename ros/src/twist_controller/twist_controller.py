@@ -20,19 +20,25 @@ class Controller(object):
         self.brake_deadband = kwargs['brake_deadband']
         self.wheel_radius = kwargs['wheel_radius']
         self.max_steer_angle = kwargs['max_steer_angle']
+        self.use_pid_control = kwargs['use_pid_control']
 
-        self.yaw_controller = YawController(kwargs['wheel_base'], kwargs['steer_ratio'],
-                                            ONE_MPH, kwargs['max_lat_accel'],
-                                            kwargs['max_steer_angle'])
+        if self.use_pid_control == True:
+            print("Using PID control ...")
+            self.throttle_pid_controller = pid.PID(kp=0.2, ki=0.01, kd=0.1, mn=self.decel_limit, mx=0.5 * self.accel_limit)
+            self.throttle_pid_controller = pid.PID(kp=0.2, ki=0.01, kd=0.1, mn=self.decel_limit, mx=0.5 * self.accel_limit)
+            self.brake_pid_controller = pid.PID(kp=30.0, ki=0.001, kd=5.0, mn=self.brake_deadband, mx=2000)
+            self.steering_pid_controller = pid.PID(kp=1.0, ki=0.001, kd=0.5, mn=-self.max_steer_angle, mx=self.max_steer_angle)
+            self.throttle_filter = lowpass.SmoothingFilter(w_weight=0.8)
+            self.brake_filter = lowpass.SmoothingFilter(w_weight=0.0)
+            self.steering_filter = lowpass.SmoothingFilter(w_weight=0.5)
+            self.reset()
+        else:
+            print("Using HYST control ...")
+            self.yaw_controller = YawController(kwargs['wheel_base'], kwargs['steer_ratio'],
+                                                ONE_MPH, kwargs['max_lat_accel'],
+                                                kwargs['max_steer_angle'])
 
-        self.throttle_pid_controller = pid.PID(kp=0.2, ki=0.01, kd=0.1, mn=self.decel_limit, mx=0.5 * self.accel_limit)
-        self.brake_pid_controller = pid.PID(kp=30.0, ki=0.001, kd=5.0, mn=self.brake_deadband, mx=2000)
-        self.steering_pid_controller = pid.PID(kp=1.0, ki=0.001, kd=0.5, mn=-self.max_steer_angle, mx=self.max_steer_angle)
-        self.throttle_filter = lowpass.SmoothingFilter(w_weight=0.8)
-        self.brake_filter = lowpass.SmoothingFilter(w_weight=0.0)
-        self.steering_filter = lowpass.SmoothingFilter(w_weight=0.5)
 
-        self.prev_time = rospy.get_rostime()
 
     def control(self, *args, **kwargs):
         # TODO: Change the arg, kwarg list to suit your needs
@@ -44,39 +50,59 @@ class Controller(object):
         current_v_ang_z = args[3]
         final_waypoints = args[4]
         current_pose = args[5]
-        dbw_enabled = args[6]
+        sample_time = args[6]
 
-        current_time = rospy.get_rostime()
-        ros_duration = current_time - self.prev_time
-        sample_time = ros_duration.secs + (1e-9 * ros_duration.nsecs)
-        self.prev_time = current_time
+        if self.use_pid_control == True:
+            # Calculate the longitudinal and lateral error
+            longitudinal_error = target_v_lin_x - current_v_lin_x
+            #longitudinal_error = final_waypoints[1].twist.twist.linear.x - current_v_lin_x
+            print("Long error:", longitudinal_error)
 
-        # Calculate the longitudinal and lateral error
-        longitudinal_error = target_v_lin_x - current_v_lin_x
-        #longitudinal_error = final_waypoints[1].twist.twist.linear.x - current_v_lin_x
-        print("Long error:", longitudinal_error)
+            lateral_error = self.get_lateral_error(final_waypoints, current_pose)
 
-        lateral_error = self.get_lateral_error(final_waypoints, current_pose)
+            # Too big longitudinal error reset the integrator to be able to break hard
+            if longitudinal_error < -1.0:
+                self.throttle_pid_controller.error_integral = 0.0
 
-        # Too big longitudinal error reset the integrator to be able to break hard
-        if longitudinal_error < -1.0:
-            self.throttle_pid_controller.error_integral = 0
+            throttle_cmd = self.throttle_pid_controller.step(longitudinal_error, sample_time)
+            throttle_cmd = self.throttle_filter.get_smoothed_value(throttle_cmd)
 
-        throttle_cmd = self.throttle_pid_controller.step(longitudinal_error, sample_time)
-        throttle_cmd = self.throttle_filter.get_smoothed_value(throttle_cmd)
+            brake_cmd = 0.0
+            if throttle_cmd < -.5:
+                throttle_cmd = 0.0
+                self.throttle_pid_controller.reset()
+                brake_cmd = self.brake_pid_controller.step(-longitudinal_error, sample_time)
+                brake_cmd = self.brake_filter.get_smoothed_value(brake_cmd)
+            else:
+                self.brake_filter.get_smoothed_value(0.0)
+                self.brake_pid_controller.reset()
 
-        brake_cmd = 0
-        if throttle_cmd > 0:
-            self.brake_filter.get_smoothed_value(0)
-            self.brake_pid_controller.reset()
+
+            steer_cmd = self.steering_pid_controller.step(lateral_error, sample_time)
+            #steer_cmd = self.steering_filter.get_smoothed_value(steer_cmd)
+
+            print("Throttle: ", throttle_cmd)
+            print("Break: ", brake_cmd)
+            print("Steer: ", steer_cmd)
+
         else:
-            throttle_cmd = 0
-            self.throttle_pid_controller.reset()
-            brake_cmd = self.brake_pid_controller.step(-longitudinal_error, sample_time)
-            brake_cmd = self.brake_filter.get_smoothed_value(brake_cmd)
+            steer_cmd = self.yaw_controller.get_steering(target_v_lin_x, target_v_ang_z, current_v_lin_x)
 
-        steer_cmd = self.steering_pid_controller.step(lateral_error, sample_time)
-        #steer_cmd = self.steering_filter.get_smoothed_value(steer_cmd)
+            velocity_diff = target_v_lin_x - current_v_lin_x;
+            acceleration = velocity_diff / 0.5
+
+            if acceleration > 0:
+                acceleration = min(self.accel_limit, acceleration)
+                throttle_cmd = acceleration / self.accel_limit
+                brake_cmd = 0.0
+            else:
+                acceleration = max(self.decel_limit, acceleration)
+                throttle_cmd = 0.0
+
+                # Force=mass*acceleration,Torque=Force*radius
+                # Torque = mass*acceleration*radius
+                torque = self.vehicle_mass * acceleration * self.wheel_radius
+                brake_cmd = abs(torque)
 
         return throttle_cmd, brake_cmd, steer_cmd
 
@@ -119,6 +145,7 @@ class Controller(object):
         return -(actual_value - expected_value)
 
     def reset(self):
-        self.throttle_pid_controller.reset()
-        self.brake_pid_controller.reset()
-        self.steering_pid_controller.reset()
+        if self.use_pid_control == True:
+            self.throttle_pid_controller.reset()
+            self.brake_pid_controller.reset()
+            self.steering_pid_controller.reset()
