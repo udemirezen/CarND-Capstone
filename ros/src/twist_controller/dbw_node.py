@@ -58,6 +58,9 @@ class DBWNode(object):
 
         # TODO: Create `TwistController` object
         self.use_pid_control = False
+        controller_mode = rospy.get_param("/controller_mode", "hyst")
+        if controller_mode == 'pid':
+            self.use_pid_control = True
         self.controller = Controller(use_pid_control=self.use_pid_control,
             wheel_base=wheel_base, steer_ratio=steer_ratio,  
             max_lat_accel=max_lat_accel, max_steer_angle=max_steer_angle,

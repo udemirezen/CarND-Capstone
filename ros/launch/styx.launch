@@ -24,4 +24,7 @@
 
     <!--Run environment parameter -->
     <param name="run_mode" value="simulator" />
+
+    <!--Controller mode -->
+    <param name="controller_mode" value="hyst" />
 </launch>

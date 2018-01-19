@@ -26,4 +26,7 @@
 
     <!--Run environment parameter -->
     <param name="run_mode" value="site" />
+
+    <!--Controller mode -->
+    <param name="controller_mode" value="pid" />
 </launch>
