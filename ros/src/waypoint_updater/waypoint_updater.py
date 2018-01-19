@@ -275,20 +275,15 @@ class WaypointUpdater(object):
     # function Next Waypoints
     def NextWaypoint(self, position, yaw, waypoints):
         closestWaypoint = self.ClosestWaypoint(position, waypoints)
-
         map_x = waypoints[closestWaypoint].pose.pose.position.x
         map_y = waypoints[closestWaypoint].pose.pose.position.y
-
         heading = math.atan2((map_y - position.y), (map_x - position.x))
-
         angle = abs(yaw - heading)
-
-	if (angle > math.pi/4):
-		closestWaypoint += 1
-                if (closestWaypoint > len(waypoints)-1):
-                    closestWaypoint -= 1
-
-	return closestWaypoint
+        if (angle > math.pi/4):
+            closestWaypoint += 1
+            if (closestWaypoint > len(waypoints)-1):
+                closestWaypoint -= 1
+        return closestWaypoint
 
     #function to convert from kilometers to milles
     def kmphToMph(self, kmph):

@@ -11,7 +11,6 @@ ONE_MPH = 0.44704
 class Controller(object):
     def __init__(self, *args, **kwargs):
 
-
         # TODO: Implement
         self.accel_limit = kwargs['accel_limit']
         self.decel_limit = kwargs['decel_limit']
@@ -87,7 +86,7 @@ class Controller(object):
         else:
             steer_cmd = self.yaw_controller.get_steering(target_v_lin_x, target_v_ang_z, current_v_lin_x)
 
-            velocity_diff = target_v_lin_x - current_v_lin_x;
+            velocity_diff = target_v_lin_x - current_v_lin_x
             acceleration = velocity_diff / 0.5
 
             if acceleration > 0:

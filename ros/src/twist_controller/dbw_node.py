@@ -107,8 +107,8 @@ class DBWNode(object):
                     self.final_waypoints,
                     self.cur_pose,
                     sample_time)
-                if self.dbw_enabled:
-                    self.publish(throttle, brake, steering)
+
+                self.publish(throttle, brake, steering)
             else:
                 print("NO DATA")
             rate.sleep()
