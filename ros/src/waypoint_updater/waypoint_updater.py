@@ -156,7 +156,7 @@ class WaypointUpdater(object):
                             distance_to_last_tl = dl(self.last_tl_pos, self.car_position)
                             if distance_to_last_tl > 0:
                                 self.distance_to_tl = distance_to_last_tl
-                    self.car_action = self.DesiredAction(self.tl_index, self.tl_state, self.next_waypoint, self.waypoints)
+                    self.car_action = self.DesiredAction(self.last_tl_pos, self.tl_state, self.next_waypoint, self.waypoints)
                     self.generateFinalWaypoints(self.next_waypoint, self.waypoints, self.car_action, self.tl_index)
                     self.publish()
                 else:
@@ -167,7 +167,7 @@ class WaypointUpdater(object):
                                rospy.logwarn("[WP_UPDATER] /base_waypoints not received")
                        if self.car_curr_vel == None  and rand < 0.01:
                                rospy.logwarn("[WP_UPDATER] /current_velocity not received")
-                       if self.tl_index == None and rand < 0.01:
+                       if self.last_tl_pos == None and rand < 0.01:
                                rospy.logwarn("[WP_UPDATER] /traffic_waypoint not received")
                 rate.sleep()
 
