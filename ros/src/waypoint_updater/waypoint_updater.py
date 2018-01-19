@@ -124,7 +124,7 @@ class WaypointUpdater(object):
         curr_lin = [msg.twist.linear.x, msg.twist.linear.y]
         self.car_curr_vel = math.sqrt(curr_lin[0]**2 + curr_lin[1]**2)
         #self.car_curr_vel = msg.twist.linear.x
-        print("Speed: ", self.car_curr_vel)
+
 
     # Callback for tl_pos
     def tl_pos_cb(self, msg):
@@ -196,9 +196,9 @@ class WaypointUpdater(object):
         a = ACC_FACTOR * self.accel_limit
         for i in range(nextWaypoint, end):
             dist = self.distance(waypoints, nextWaypoint, i+1)
-            #velocity = math.sqrt(init_vel**2 + 2 * a * dist)
-            #if velocity > self.cruise_speed:
-            velocity = self.cruise_speed
+            velocity = math.sqrt(init_vel**2 + 2 * a * dist)
+            if velocity > self.cruise_speed:
+                velocity = self.cruise_speed
             self.set_waypoint_velocity(waypoints, i, velocity)
             self.final_waypoints.append(waypoints[i])
 

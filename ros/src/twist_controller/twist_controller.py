@@ -1,12 +1,12 @@
 import rospy
 import numpy as np
+from  yaw_controller import YawController
+import pid
+import lowpass
 
 GAS_DENSITY = 2.858
 ONE_MPH = 0.44704
 
-from  yaw_controller import YawController
-import pid
-import lowpass
 
 class Controller(object):
     def __init__(self, *args, **kwargs):
@@ -84,7 +84,6 @@ class Controller(object):
             print("Throttle: ", throttle_cmd)
             print("Break: ", brake_cmd)
             print("Steer: ", steer_cmd)
-
         else:
             steer_cmd = self.yaw_controller.get_steering(target_v_lin_x, target_v_ang_z, current_v_lin_x)
 
@@ -99,13 +98,12 @@ class Controller(object):
                 acceleration = max(self.decel_limit, acceleration)
                 throttle_cmd = 0.0
 
-                # Force=mass*acceleration,Torque=Force*radius
-                # Torque = mass*acceleration*radius
-                torque = self.vehicle_mass * acceleration * self.wheel_radius
-                brake_cmd = abs(torque)
+            # Force=mass*acceleration,Torque=Force*radius
+            # Torque = mass*acceleration*radius
+            torque = self.vehicle_mass * acceleration * self.wheel_radius
+            brake_cmd = abs(torque)
 
         return throttle_cmd, brake_cmd, steer_cmd
-
 
 
     def get_lateral_error(self, waypoints, current_pose):
