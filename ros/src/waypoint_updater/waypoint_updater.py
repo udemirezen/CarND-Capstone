@@ -26,8 +26,8 @@ as well as to verify your TL classifier.
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
-LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
-PUBLISH_RATE = 20 # Publishing rate (Hz)
+LOOKAHEAD_WPS = 100 # Number of waypoints we will publish. You can change this number
+PUBLISH_RATE = 10 # Publishing rate (Hz)
 SAFE_DECEL_FACTOR = 0.1 # Multiplier to the decel limit.
 ACC_FACTOR = 0.5 # Multiplier to the accel limit
 STOP_DISTANCE = 3.00 # Distance in meters from the traffic light stop line
@@ -123,6 +123,8 @@ class WaypointUpdater(object):
     def current_velocity_cb(self, msg):
         curr_lin = [msg.twist.linear.x, msg.twist.linear.y]
         self.car_curr_vel = math.sqrt(curr_lin[0]**2 + curr_lin[1]**2)
+        #self.car_curr_vel = msg.twist.linear.x
+
 
     # Callback for tl_pos
     def tl_pos_cb(self, msg):
@@ -137,9 +139,11 @@ class WaypointUpdater(object):
         self.decel_limit = abs(rospy.get_param('~/twist_controller/decel_limit', -5))
         self.accel_limit = rospy.get_param('~/twist_controller/accel_limit', 1)
 
+
         env_velocity = os.getenv('VELOCITY','0')
         if float(env_velocity) > 0.01:
            self.cruise_speed = self.kmphToMph(float(env_velocity))
+
 
         while not rospy.is_shutdown():
 
@@ -156,8 +160,9 @@ class WaypointUpdater(object):
                             distance_to_last_tl = dl(self.last_tl_pos, self.car_position)
                             if distance_to_last_tl > 0:
                                 self.distance_to_tl = distance_to_last_tl
-                    self.car_action = self.DesiredAction(self.last_tl_pos, self.tl_state, self.next_waypoint, self.waypoints)
+                    self.car_action = self.DesiredAction(self.tl_index, self.tl_state, self.next_waypoint, self.waypoints)
                     self.generateFinalWaypoints(self.next_waypoint, self.waypoints, self.car_action, self.tl_index)
+
                     self.publish()
                 else:
                        rand = random.uniform(0,1) ## avoiding writting all the time in the logs
@@ -167,12 +172,13 @@ class WaypointUpdater(object):
                                rospy.logwarn("[WP_UPDATER] /base_waypoints not received")
                        if self.car_curr_vel == None  and rand < 0.01:
                                rospy.logwarn("[WP_UPDATER] /current_velocity not received")
-                       if self.last_tl_pos == None and rand < 0.01:
+                       if self.tl_index == None and rand < 0.01:
                                rospy.logwarn("[WP_UPDATER] /traffic_waypoint not received")
+                       if self.last_tl_pos == None and rand < 0.01:
+                           rospy.logwarn("[WP_UPDATER] /traffic_light_pos not received")
                 rate.sleep()
 
     def StopWaypoints(self, nextWaypoint, waypoints):
-
         init_vel = self.car_curr_vel
         end = nextWaypoint + LOOKAHEAD_WPS
         if end > len(waypoints) - 1:
@@ -183,7 +189,6 @@ class WaypointUpdater(object):
             self.final_waypoints.append(waypoints[i])
 
     def GoWaypoints(self, nextWaypoint, waypoints):
-
         init_vel = self.car_curr_vel
         end = nextWaypoint + LOOKAHEAD_WPS
         if end > len(waypoints) - 1:
@@ -193,12 +198,11 @@ class WaypointUpdater(object):
             dist = self.distance(waypoints, nextWaypoint, i+1)
             velocity = math.sqrt(init_vel**2 + 2 * a * dist)
             if velocity > self.cruise_speed:
-               velocity = self.cruise_speed
+                velocity = self.cruise_speed
             self.set_waypoint_velocity(waypoints, i, velocity)
             self.final_waypoints.append(waypoints[i])
 
     def SlowWaypoints(self, nextWaypoint, tl_index, waypoints):
-
         if (self.distance_to_tl != None) :
            dist_to_TL = self.distance_to_tl
            slow_decel = (self.car_curr_vel ** 2)/(2 * dist_to_TL)
@@ -232,6 +236,7 @@ class WaypointUpdater(object):
            self.SlowWaypoints(next_waypoint, tl_index, waypoints)
         elif (action == "GO"):
            self.GoWaypoints(next_waypoint, waypoints)
+
 
     def get_waypoint_velocity(self, waypoint):
         return waypoint.twist.twist.linear.x
@@ -269,8 +274,7 @@ class WaypointUpdater(object):
 
     # function Next Waypoints
     def NextWaypoint(self, position, yaw, waypoints):
-
-	closestWaypoint = self.ClosestWaypoint(position, waypoints)
+        closestWaypoint = self.ClosestWaypoint(position, waypoints)
 
         map_x = waypoints[closestWaypoint].pose.pose.position.x
         map_y = waypoints[closestWaypoint].pose.pose.position.y
@@ -295,16 +299,16 @@ class WaypointUpdater(object):
         stop1 = (dist < STOP_DISTANCE and stop0)
         stop2 = (tl_index == next_waypoint and dist < STOP_DISTANCE and stop0)
         stop3 = (tl_index + STOP_HYST > next_waypoint and stop0 and dist == 99999)
-        return  stop1 or stop2 or stop3
+        return stop1 or stop2 or stop3
 
     def CheckSlow(self, tl_state, dist):
         slow1 = (dist > STOP_DISTANCE and dist < self.safe_distance and tl_state != "NO" and dist != 99999)
         slow2 = (dist > STOP_DISTANCE and dist < 2 * STOP_DISTANCE and tl_state != "NO" and dist != 99999 and self.car_curr_vel > self.kmphToMph(3.0))
-        return  slow1 or slow2
+        return slow1 or slow2
 
     def CheckGo(self, tl_index, tl_state, next_waypoint, dist):
         go1 = (tl_index < next_waypoint)
-        go2 = (tl_state == "GREEN" and dist < STOP_DISTANCE)
+        go2 = (tl_state == "GREEN" and dist > STOP_DISTANCE)
         go3 = (dist > self.safe_distance)
         return go1 or go2 or go3
 
@@ -312,18 +316,16 @@ class WaypointUpdater(object):
     def DesiredAction(self, tl_index, tl_state, next_waypoint, waypoints):
         print("TL Index: ", tl_index)
         print("TL State: ", tl_state)
-        if tl_index != None and tl_state != "NO":
-           dist = self.distance_to_tl
-           print("DISTANCE: ", dist)
+        print("Next waypoint: ", next_waypoint)
+        dist = self.distance_to_tl
+        print("DISTANCE: ", dist)
+        if self.distance_to_tl > 0 and tl_state != "NO":
            if(self.CheckStop(tl_index, tl_state, next_waypoint, dist)):
               action = "STOP"
-              return action
            elif(self.CheckSlow(tl_state, dist)):
               action = "SLOW"
-              return action
            elif(self.CheckGo(tl_index, tl_state, next_waypoint, dist)):
               action = "GO"
-              return action
         elif tl_index == None or tl_state == "NO" or tl_index == -1:
             if tl_index != -1:
                dist = self.distance_to_tl
@@ -333,7 +335,8 @@ class WaypointUpdater(object):
                   action = "GO"
             else:
                action = "GO"
-        return action 
+        print("Action: ", action)
+        return action
 
     #Publish waypoints
     def publish(self):

@@ -41,8 +41,13 @@ class TLDetector(object):
         self.tl_classifier = TLClassifier(self.run_mode)
         print("Traffic light classifier created")
 
-        self.listener = tf.TransformListener()
-        print("Listening")
+
+        # Subscribers
+        sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
+        sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
+
+        sub3 = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb)
+        sub6 = rospy.Subscriber('/image_color', Image, self.image_cb)
 
         # we need to wait till system is set up otherwise we ge race condition
         # but don't lock the main thread
@@ -57,9 +62,6 @@ class TLDetector(object):
         timer.daemon = True
         timer.start()
 
-        # Subscribers
-        sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
-        sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
 
         '''
         /vehicle/traffic_lights provides you with the location of the traffic light in 3D map space and
@@ -68,8 +70,6 @@ class TLDetector(object):
         simulator. When testing on the vehicle, the color state will not be available. You'll need to
         rely on the position of the light and the camera image to predict it.
         '''
-        sub3 = rospy.Subscriber('/vehicle/traffic_lights', TrafficLightArray, self.traffic_cb)
-        sub6 = rospy.Subscriber('/image_color', Image, self.image_cb)
 
 
         self.bridge = CvBridge()
@@ -86,6 +86,10 @@ class TLDetector(object):
         self.tl_detection_out = rospy.Publisher('/tl_detection_out', Image, queue_size=1)
 
         self.lock = threading.RLock()
+
+        self.listener = tf.TransformListener()
+        print("Listening")
+
         rospy.spin()
 
     def pose_cb(self, msg):
@@ -193,6 +197,8 @@ class TLDetector(object):
             # Publish state
             self.upcoming_traffic_light_state_pub.publish(Int32(state))
             # Publish pos
+            #print("Closest traffic light pos: ", closest_traffic_light.pose.pose.position)
+            #print("Closest traffic light index: ", closest_traffic_light_idx)
             self.upcoming_traffic_light_pos_pub.publish(closest_traffic_light.pose.pose.position)
 
             return closest_traffic_light_idx, state
