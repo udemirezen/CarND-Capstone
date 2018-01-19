@@ -309,11 +309,11 @@ class WaypointUpdater(object):
 
     #Action to execute
     def DesiredAction(self, tl_index, tl_state, next_waypoint, waypoints):
-        print("TL Index: ", tl_index)
-        print("TL State: ", tl_state)
-        print("Next waypoint: ", next_waypoint)
         dist = self.distance_to_tl
-        print("DISTANCE: ", dist)
+        #print("TL Index: ", tl_index)
+        #print("TL State: ", tl_state)
+        #print("Next waypoint: ", next_waypoint)
+        #print("DISTANCE: ", dist)
         if self.distance_to_tl > 0 and tl_state != "NO":
            if(self.CheckStop(tl_index, tl_state, next_waypoint, dist)):
               action = "STOP"
@@ -330,7 +330,7 @@ class WaypointUpdater(object):
                   action = "GO"
             else:
                action = "GO"
-        print("Action: ", action)
+        #print("Action: ", action)
         return action
 
     #Publish waypoints

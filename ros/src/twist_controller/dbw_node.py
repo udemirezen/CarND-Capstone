@@ -95,10 +95,10 @@ class DBWNode(object):
             self.prev_time = current_time
 
             data = [self.twist_cmd, self.cur_vel, self.cur_pose, self.final_waypoints]
-            data_availabe = all([x is not None for x in data])
+            data_available = all([x is not None for x in data])
 
 
-            if self.dbw_enabled is True and data_availabe:
+            if self.dbw_enabled is True and data_available:
                 throttle, brake, steering = self.controller.control(
                     self.twist_cmd.linear.x,
                     self.twist_cmd.angular.z,
@@ -135,22 +135,21 @@ class DBWNode(object):
         tcmd.enable = True
         tcmd.pedal_cmd_type = ThrottleCmd.CMD_PERCENT
         tcmd.pedal_cmd = throttle
+        self.throttle_pub.publish(tcmd)
 
         scmd = SteeringCmd()
         scmd.enable = True
         scmd.steering_wheel_angle_cmd = steer
+        self.steer_pub.publish(scmd)
 
         bcmd = BrakeCmd()
         bcmd.enable = True
         bcmd.pedal_cmd_type = BrakeCmd.CMD_TORQUE
         bcmd.pedal_cmd = brake
+        self.brake_pub.publish(bcmd)
 
-        if brake == 0:
-            self.throttle_pub.publish(tcmd)
-            self.steer_pub.publish(scmd)
-        if throttle == 0:
-            self.brake_pub.publish(bcmd)
-            self.steer_pub.publish(scmd)
+        print("Brake cmd: ", bcmd)
+        print("Throttle cmd: ", tcmd)
 
 
 if __name__ == '__main__':

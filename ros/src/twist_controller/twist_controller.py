@@ -80,13 +80,11 @@ class Controller(object):
             steer_cmd = self.steering_pid_controller.step(lateral_error, sample_time)
             #steer_cmd = self.steering_filter.get_smoothed_value(steer_cmd)
 
-            print("Throttle: ", throttle_cmd)
-            print("Break: ", brake_cmd)
-            print("Steer: ", steer_cmd)
         else:
             steer_cmd = self.yaw_controller.get_steering(target_v_lin_x, target_v_ang_z, current_v_lin_x)
 
             velocity_diff = target_v_lin_x - current_v_lin_x
+            print("Velocity diff: ", velocity_diff)
             acceleration = velocity_diff / 0.5
 
             if acceleration > 0:
@@ -97,10 +95,14 @@ class Controller(object):
                 acceleration = max(self.decel_limit, acceleration)
                 throttle_cmd = 0.0
 
-            # Force=mass*acceleration,Torque=Force*radius
-            # Torque = mass*acceleration*radius
-            torque = self.vehicle_mass * acceleration * self.wheel_radius
-            brake_cmd = abs(torque)
+                # Force=mass*acceleration,Torque=Force*radius
+                # Torque = mass*acceleration*radius
+                torque = self.vehicle_mass * acceleration * self.wheel_radius
+                brake_cmd = abs(torque)
+
+        #print("Throttle: ", throttle_cmd)
+        #print("Break: ", brake_cmd)
+        #print("Steer: ", steer_cmd)
 
         return throttle_cmd, brake_cmd, steer_cmd
 
