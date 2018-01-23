@@ -21,16 +21,19 @@
 
 ### Running some tests
 
-With the simulator:
+#### With the simulator:
 
  <img src="/pics/media-20180117.png" alt="Tests"> 
 
-With the provided rosbag:
+#### With the provided rosbag:
 
+Tests Traffic Light Red 1:
  <img src="/pics/red_tl_ros_bag.jpg" alt="Tests Traffic Light Red 1"  border="2"> 
 
+Tests Traffic Light Red 2:
  <img src="/pics/red_2_tl_ros_bag.jpg" alt="Tests Traffic Light Red 2"  border="2"> 
 
+Tests Traffic Light Green:
  <img src="/pics/green_tl_ros_bag.jpg" alt="Tests Traffic Light Green"  border="2"> 
 
 ### Traffic light detection
