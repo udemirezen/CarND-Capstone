@@ -151,8 +151,8 @@ class DBWNode(object):
         bcmd.pedal_cmd = brake
         self.brake_pub.publish(bcmd)
 
-        print("Brake cmd: ", bcmd)
-        print("Throttle cmd: ", tcmd)
+        #print("Brake cmd: ", bcmd)
+        #print("Throttle cmd: ", tcmd)
 
 
 if __name__ == '__main__':

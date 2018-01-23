@@ -78,6 +78,7 @@ class WaypointUpdater(object):
         self.distance_to_tl = None
         self.last_tl_pos = None
 
+        self.controller_mode = rospy.get_param("/controller_mode", "hyst")
 
         self.work()
         #rospy.spin()
@@ -196,7 +197,10 @@ class WaypointUpdater(object):
         a = ACC_FACTOR * self.accel_limit
         for i in range(nextWaypoint, end):
             dist = self.distance(waypoints, nextWaypoint, i+1)
-            velocity = math.sqrt(init_vel**2 + 2 * a * dist)
+            if self.controller_mode == 'pid':
+                velocity = math.sqrt(init_vel**2 + a * dist * 4)
+            else:
+                velocity =  math.sqrt(init_vel**2 + 2 * a * dist)
             if velocity > self.cruise_speed:
                 velocity = self.cruise_speed
             self.set_waypoint_velocity(waypoints, i, velocity)

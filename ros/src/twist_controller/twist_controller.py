@@ -55,7 +55,7 @@ class Controller(object):
             # Calculate the longitudinal and lateral error
             longitudinal_error = target_v_lin_x - current_v_lin_x
             #longitudinal_error = final_waypoints[1].twist.twist.linear.x - current_v_lin_x
-            print("Long error:", longitudinal_error)
+            #print("Long error:", longitudinal_error)
 
             lateral_error = self.get_lateral_error(final_waypoints, current_pose)
 
@@ -67,7 +67,7 @@ class Controller(object):
             throttle_cmd = self.throttle_filter.get_smoothed_value(throttle_cmd)
 
             brake_cmd = 0.0
-            if throttle_cmd < -.5:
+            if throttle_cmd < -.2:
                 throttle_cmd = 0.0
                 self.throttle_pid_controller.reset()
                 brake_cmd = self.brake_pid_controller.step(-longitudinal_error, sample_time)
@@ -84,7 +84,7 @@ class Controller(object):
             steer_cmd = self.yaw_controller.get_steering(target_v_lin_x, target_v_ang_z, current_v_lin_x)
 
             velocity_diff = target_v_lin_x - current_v_lin_x
-            print("Velocity diff: ", velocity_diff)
+            #print("Velocity diff: ", velocity_diff)
             acceleration = velocity_diff / 0.5
 
             if acceleration > 0:

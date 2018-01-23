@@ -58,7 +58,7 @@ class TLDetector(object):
             self.classifier_ready = True
             timer.cancel()
 
-        timer = threading.Timer(15.0, shutdown_timer)
+        timer = threading.Timer(10.0, shutdown_timer)
         timer.daemon = True
         timer.start()
 
