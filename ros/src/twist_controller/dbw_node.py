@@ -2,6 +2,8 @@
 
 import rospy
 from std_msgs.msg import Bool
+from std_msgs.msg import Int32
+
 from dbw_mkz_msgs.msg import ThrottleCmd, SteeringCmd, BrakeCmd, SteeringReport
 from geometry_msgs.msg import TwistStamped, Twist
 
@@ -75,7 +77,9 @@ class DBWNode(object):
         rospy.Subscriber('/twist_cmd', TwistStamped, self.twist_cmd_cb)
         rospy.Subscriber('/final_waypoints', styx_msgs.msg.Lane, self.final_waypoints_cb, queue_size=1)
         rospy.Subscriber('/current_pose', geometry_msgs.msg.PoseStamped, self.current_pose_cb, queue_size=1)
+        rospy.Subscriber('/traffic_light_state', Int32, self.tl_state_cb)
 
+        self.tl_active = False
         self.dbw_enabled = False
         self.cur_vel = Twist()
         self.twist_cmd = Twist()
@@ -101,7 +105,7 @@ class DBWNode(object):
             data_available = all([x is not None for x in data])
 
 
-            if self.dbw_enabled is True and data_available:
+            if self.dbw_enabled is True and self.tl_active is True and data_available:
                 throttle, brake, steering = self.controller.control(
                     self.twist_cmd.linear.x,
                     self.twist_cmd.angular.z,
@@ -120,6 +124,11 @@ class DBWNode(object):
         self.dbw_enabled = bool(msg.data)
         if self.dbw_enabled is False:
             self.controller.reset()
+
+    def tl_state_cb(self, msg):
+        if msg is not None and self.tl_active is False:
+            self.tl_active = True
+
 
     def current_velocity_cb(self, msg):
         self.cur_vel = msg.twist

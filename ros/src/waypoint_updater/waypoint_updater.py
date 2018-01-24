@@ -49,10 +49,10 @@ class WaypointUpdater(object):
         #rospy.logdebug('Base waypoints ', base_waypoints)
 
         # TODO: Add a subscriber for /traffic_waypoint and /obstacle_waypoint below
-        traffic_waypoint = rospy.Subscriber('/traffic_waypoint', CustomTrafficLight, self.traffic_cb)
+        rospy.Subscriber('/traffic_waypoint', CustomTrafficLight, self.traffic_cb)
         #rospy.logdebug('Traffic waypoints ', traffic_waypoint)
 
-        obstacle_waypoint = rospy.Subscriber('/obstacle_waypoint', Waypoint, self.obstacle_cb)
+        rospy.Subscriber('/obstacle_waypoint', Waypoint, self.obstacle_cb)
         #rospy.logdebug('Obstacle waypoints ', obstacle_waypoint)
         
         rospy.Subscriber('/current_velocity', TwistStamped, self.current_velocity_cb)
